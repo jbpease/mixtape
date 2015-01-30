@@ -2,7 +2,7 @@
 
 **mixTAPE: mix of Tools for Analysis of Phylogenetics and Evolution**
 
-http://www.bitbucket.org/jbpease/mixtape
+http://www.github.com/jbpease/mixtape
 
 James B. Pease
 jbpease@indiana.edu
@@ -30,7 +30,7 @@ Email me or visit my web page (see above).
 If you use my tool in published work, please include:
 * the name "mixTAPE"
 * the name of the specific tool (i.e. "count_sam") 
-* the URL of this project (http://www.bitbucket.org/jbpease/mixtape)
+* the URL of this project (http://www.github.com/jbpease/mixtape)
 
 
 
