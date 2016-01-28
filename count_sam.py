@@ -1,22 +1,45 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 
-mixTAPE: mix of Tools of Analysis of Phylogenetic and Evolution
-count_sam.py
-Basic analysis of SAM file to determine mapping efficiency.
+MixTAPE: Mix of Tools for Analysis in Phylogenetics and Evolution
+http://www.github.org/jbpease/mixtape
 
-Version 2014-07-25: Initial Release
+count_sam.py: Basic analysis of SAM file to determine mapping efficiency.
+@author: James B. Pease
+
+@version: 2014-07-25 - Initial release
+version: 2016-01-28 - Initial release
+
+This file is part of MixTAPE.
+
+MixTAPE is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+MixTAPE is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with MixTAPE.  If not, see <http://www.gnu.org/licenses/>.
+
 
 """
 
-from __future__ import print_function
-import sys, os, argparse
+from __future__ import print_function, unicode_literals
+import sys
+import os
+import argparse
+
 
 def progress_meter(i, target):
     """Tracks Progress on a Numeric Scale"""
     tlen = len(str(target))
     pct = str(((i) * 100)/target)
-    msg = (str(i).zfill(tlen) + "/" + str(target) + "=" + pct.zfill(3)  + '%')
+    msg = (str(i).zfill(tlen) + "/" + str(target) + "=" + pct.zfill(3) + '%')
     if i > 0 and i < target:
         sys.stderr.write('\b' * len(msg) + msg)
     elif i == 0:
@@ -26,6 +49,7 @@ def progress_meter(i, target):
     else:
         sys.stderr.write("ERROR")
     return ''
+
 
 def explain_sam_flag(flag, code=None):
     """Decode SAM File Flags into plain text"""
@@ -39,6 +63,7 @@ def explain_sam_flag(flag, code=None):
             bool_flags.append(code[i])
         i += 1
     return bool_flags
+
 
 def main(arguments=sys.argv[1:]):
     """Main count_sam function"""
@@ -97,11 +122,11 @@ def main(arguments=sys.argv[1:]):
     print("Count\tFlag\tPct\tInfo", file=outfile)
     for (count, flag) in flag_codes:
         print(("{!s}\t{!s}\t{!s}%\t{!s}"
-              ).format(count, flag, round(float(count)*100/total, 1),
-                       ';'.join(explain_sam_flag(flag, code=sam_flag_code))),
+               ).format(count, flag, round(float(count)*100/total, 1),
+                        ';'.join(explain_sam_flag(flag, code=sam_flag_code))),
               file=outfile)
         bincode = bin(int(flag))[2:].zfill(11)[::-1]
-        for j in xrange(len(bincode)):
+        for j in range(len(bincode)):
             if bincode[j] == '1':
                 flag_bits[j] = flag_bits.get(j, 0) + count
     print("", file=outfile)
@@ -109,8 +134,8 @@ def main(arguments=sys.argv[1:]):
           file=outfile)
     for samcode in sorted(flag_bits.keys()):
         print(("{!s}\t{!s}\t{!s}\t{!s}%"
-              ).format(samcode, sam_flag_code[samcode], flag_bits[samcode],
-                       round(float(flag_bits[samcode])*100/total, 1)),
+               ).format(samcode, sam_flag_code[samcode], flag_bits[samcode],
+                        round(float(flag_bits[samcode])*100/total, 1)),
               file=outfile)
     outfile.close()
     return ''

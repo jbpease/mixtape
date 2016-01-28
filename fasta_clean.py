@@ -1,20 +1,37 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
 
-mixTAPE: mix of Tools of Analysis of Phylogenetic and Evolution
-James B. Pease
-http://www.bitbucket.org/jbpease/mixtape
+MixTAPE: Mix of Tools for Analysis in Phylogenetics and Evolution
+http://www.github.org/jbpease/mixtape
 
 clean_fasta.py: Simple tool to cleanup a FASTA file:
-- Remove problematic puctuation symbols from the headers
-- Remove additional words from the header lines
-- Standardize length of sequence lines
+@author: James B. Pease
 
-Version 2014-07-25: Initial Release
+version 2014-07-25 - Initial release
+@version 2016-01-28 - Fixes compatibility updates 
+
+This file is part of MixTAPE.
+
+MixTAPE is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+MixTAPE is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with MixTAPE.  If not, see <http://www.gnu.org/licenses/>.
+
 
 """
 
-import sys, argparse
+from __future__ import print_function, unicode_literals
+import sys
+import argparse
 
 def labelmod(label, args):
     """FASTA Label Modifications"""
