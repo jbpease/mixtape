@@ -5,8 +5,12 @@
 http://www.github.com/jbpease/mixtape
 
 James B. Pease
-jbpease@indiana.edu
-https://mypage.iu.edu/~jbpease
+
+Email: jbpease@umich.edu
+
+Web: http://jbpease.github.io
+
+GScholar: https://scholar.google.com/citations?user=VzP548QAAAAJ&hl=en
 
 This is a set of simple scripts to perform general tasks in data manipulation, bioinformatics, evolutionary analysis and phylogenetics.
 Development of these tools is ongoing and there may be daily builds of some tools, so be sure to **update often**. 
