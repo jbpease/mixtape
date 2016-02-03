@@ -92,15 +92,15 @@ def main(arguments=sys.argv[1:]):
     parser.add_argument("--out", help="output stats file")
     parser.add_argument("--version", help="version information")
     args = parser.parse_args(args=arguments)
-    characters = {}
-    lengths = []
-    dimers = {}
-    tetramers = {}
     if args.version:
         print("Version 2016-02-03")
         sys.exit()
     entries = []
     for fastapath in args.fasta:
+        characters = {}
+        lengths = []
+        dimers = {}
+        tetramers = {}
         entry = {'filename': fastapath}
         for header, seq in fasta_iter(fastapath):
             lengths.append(len(seq))
