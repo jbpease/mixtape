@@ -30,7 +30,7 @@ along with MixTAPE.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
 import argparse
-from itertools import combinations, groupby
+from itertools import groupby
 from random import sample as rsample
 
 AMBIG = {"A": "A",
@@ -71,8 +71,8 @@ def calc_pwdist_nuc(seq0, seq1, mode="random2"):
     for i, base0 in enumerate(seq0):
         base0 = base0.upper()
         base1 = seq1[i].upper()
-        if (base0 not in 'RYWSMKBDHVNATGC' or 
-                base1 not in 'RYWSMKBDHVNATGC') :
+        if (base0 not in 'RYWSMKBDHVNATGC' or
+                base1 not in 'RYWSMKBDHVNATGC'):
             continue
         if base0 in "BDHVN" or base1 in "BDHVN":
             if mode != "random4":
@@ -84,8 +84,9 @@ def calc_pwdist_nuc(seq0, seq1, mode="random2"):
         base1 = rsample(AMBIG[base1], 1)[0]
         total += 1
         if base0 != base1:
-            diff +=1
+            diff += 1
     return float(diff / total)
+
 
 def calc_pwdist_prot(seq0, seq1):
     diff = 0
@@ -93,13 +94,13 @@ def calc_pwdist_prot(seq0, seq1):
     for i, base0 in enumerate(seq0):
         base0 = base0.upper()
         base1 = seq1[i].upper()
-        if (base0 not in 'ACDEFGHIKLMNPQRSTVWY' or 
+        if (base0 not in 'ACDEFGHIKLMNPQRSTVWY' or
                 base1 not in 'ACDEFGHIKLMNPQRSTVWY'):
             continue
         total += 1
         if base0 != base1:
-            diff +=1
-    return float(pwdist / total)
+            diff += 1
+    return float(diff / total)
 
 
 def main(arguments=None):
@@ -108,15 +109,17 @@ def main(arguments=None):
         description=__doc__,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('infile')
-    parser.add_argument("-m", "--mode", choices=("strict", "random2",
-                                                 "random4"),
-                        default="random", 
+    parser.add_argument("-m", "--mode",
+                        choices=("strict", "random2", "random4"),
+                        default="random",
                         help=("strict=skip ambiguous; "
-                             "random2=choose random at biallelic only; "
-                             "random4=choose random at any ambiguous"))
+                              "random2=choose random at biallelic only; "
+                              "random4=choose random at any ambiguous"))
     parser.add_argument("-t", "--seqtype", choices=("nuc", "prot"),
-                    default="nuc", 
-                    help="nucleotide or protein alignment")
+                        default="nuc",
+                        help="nucleotide or protein alignment")
+    parser.add_argument('--version', action='version',
+                        version='%(prog)s version 1')
     args = parser.parse_args(args=arguments)
     headers = []
     distances = {}
