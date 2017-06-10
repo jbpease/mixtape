@@ -1,11 +1,30 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # vim:fileencoding=utf-8
-#
-# @author: James B. Pease
-# @version: 1.0
+
 """
+
+MixTAPE: Mix of Tools for Analysis in Phylogenetics and Evolution
+http://www.github.org/jbpease/mixtape
+
 Takes FASTA as input and outputs CSV of pairwise distances.
+@author: James B. Pease
+
+This file is part of MixTAPE.
+
+MixTAPE is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+MixTAPE is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with MixTAPE.  If not, see <http://www.gnu.org/licenses/>.
+
 """
 
 
@@ -100,24 +119,20 @@ def main(arguments=None):
                     help="nucleotide or protein alignment")
     args = parser.parse_args(args=arguments)
     headers = []
-    seqs = {}
     distances = {}
-    for hdr, seq in fasta_iter(args.infile):
-        headers.append(hdr)
-        seqs[hdr] = seq
-    # Calculate pairwise distances for all pairs, store values under
-    # both combinations
-    for hdr0, hdr1 in combinations(headers, 2):
-        if args.seqtype == "prot":
-            pwdist = calc_pwdist_prot(seqs[hdr0], seqs[hdr1])
-        else:
-            pwdist = calc_pwdist_nuc(seqs[hdr0], seqs[hdr1], 
-                                     mode=args.mode)
-        distances[(hdr0, hdr1)] = pwdist + 0.0
-        distances[(hdr1, hdr0)] = pwdist + 0.0
-    # Add zeros on the diagonal
-    for hdr in headers:
-        distances[(hdr, hdr)] = 0.0
+    for hdr0, seq0 in fasta_iter(args.infile):
+        headers.append(hdr0)
+        distances[(hdr0, hdr0)] = 0.0
+        for hdr1, seq1 in fasta_iter(args.infile):
+            if (hdr0, hdr1) in distances:
+                continue
+            else:
+                if args.seqtype == "prot":
+                    pwdist = calc_pwdist_prot(seq0, seq1)
+                else:
+                    pwdist = calc_pwdist_nuc(seq0, seq1, mode=args.mode)
+                distances[(hdr0, hdr1)] = pwdist + 0.0
+                distances[(hdr1, hdr0)] = pwdist + 0.0
     # Print first header line
     print(",".join([""] + headers))
     # Iterate through the headers (skip the blank)
