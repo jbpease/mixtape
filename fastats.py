@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 
@@ -7,8 +7,6 @@ http://www.github.org/jbpease/mixtape
 
 FASTA Stats: Quick FASTA Stats
 @author: James B. Pease
-
-@version: 2016-02-03 - Initial release
 
 This file is part of MixTAPE.
 
@@ -28,7 +26,6 @@ along with MixTAPE.  If not, see <http://www.gnu.org/licenses/>.
 
 """
 
-from __future__ import print_function, unicode_literals
 import sys
 import argparse
 from itertools import groupby
@@ -36,10 +33,7 @@ from math import log
 
 
 def mean(x):
-    if len(x) == 0:
-        return 0
-    else:
-        return float(sum(x))/len(x)
+    return 0 if len(x) == 0 else float(sum(x))/len(x)
 
 
 def median(x, presorted=False):
@@ -57,7 +51,7 @@ def fasta_iter(fasta_name):
     """
         given a fasta file. yield tuples of header, sequence
         Adapted from https://github.com/brentp
-    """
+     """
     filehandler = open(fasta_name, 'r')
     faiter = (x[1] for x in groupby(filehandler, lambda line: line[0] == ">"))
     for header in faiter:
@@ -84,59 +78,52 @@ def mutual_info(elems, subelems):
     return mutual_information
 
 
-def main(arguments=sys.argv[1:]):
-    """Main method for fasta_stats"""
-    parser = argparse.ArgumentParser(description="""
-    Calculate basic statistics for one or more fasta files""")
-    parser.add_argument("fasta", nargs='*', help="input MVF file")
-    parser.add_argument("--out", help="output stats file")
-    parser.add_argument("--version", help="version information")
+def main(arguments=None):
+    """Main method"""
+    arguments = arguments if arguments is not None else sys.argv[1:]
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("fasta", nargs=1,
+                        help="input fasta file")
     args = parser.parse_args(args=arguments)
-    if args.version:
-        print("Version 2016-02-03")
-        sys.exit()
-    entries = []
-    for fastapath in args.fasta:
-        characters = {}
-        lengths = []
-        dimers = {}
-        tetramers = {}
-        entry = {'filename': fastapath}
-        for header, seq in fasta_iter(fastapath):
-            lengths.append(len(seq))
-            for i in range(len(seq)):
-                characters[seq[i]] = characters.get(seq[i], 0) + 1
-                if len(seq[i:i + 2]) == 2:
-                    dimers[seq[i:i + 2]] = dimers.get(seq[i:i + 2], 0) + 1
-                if len(seq[i:i + 4]) == 4:
-                    tetramers[seq[i:i + 4]] = tetramers.get(
-                       seq[i:i + 4], 0) + 1
-        entry['mi2'] = mutual_info(tetramers, dimers)
-        entry['len.min'] = min(lengths)
-        entry['len.max'] = max(lengths)
-        entry['len.mean'] = mean(lengths)
-        lengths.sort()
-        entry['len.median'] = median(lengths, presorted=True)
-        lensum = sum(lengths)
-        runtotal = 0
-        for i in range(len(lengths)):
-            runtotal += lengths[i]
-            if runtotal >= lensum:
-                entry['len.N50'] = lengths[i]
-                break
-        for char in characters:
-                entry['chr{}'.format(char)] = characters[char]
-        entries.append(entry)
-        print("finished processing {}".format(fastapath))
+    characters = {}
+    lengths = []
+    dimers = {}
+    tetramers = {}
+    data = {'filename': args.fasta[0]}
+    for header, seq in fasta_iter(args.fasta[0]):
+        lengths.append(len(seq))
+        for i in range(len(seq)):
+            characters[seq[i]] = characters.get(seq[i], 0) + 1
+            if len(seq[i:i + 2]) == 2:
+                dimers[seq[i:i + 2]] = dimers.get(seq[i:i + 2], 0) + 1
+            if len(seq[i:i + 4]) == 4:
+                tetramers[seq[i:i + 4]] = tetramers.get(
+                   seq[i:i + 4], 0) + 1
+    data['mi2'] = mutual_info(tetramers, dimers)
+    data['len.min'] = min(lengths)
+    data['len.max'] = max(lengths)
+    data['len.mean'] = mean(lengths)
+    lengths.sort()
+    data['len.median'] = median(lengths, presorted=True)
+    lensum = sum(lengths)
+    runtotal = 0
+    for i in range(len(lengths)):
+        runtotal += lengths[i]
+        if runtotal >= lensum:
+            data['len.N50'] = lengths[i]
+            break
+    for char in characters:
+        data['chr{}'.format(char)] = characters[char]
     headers = ["filename"]
     headers.extend(["chr{}".format(x) for x in sorted(characters)])
     headers.extend(["len.min", "len.mean", "len.max", "len.median", "len.N50"])
     headers.append("mi2")
     print("{}".format("\t".join(headers)))
-    for entry in entries:
-        print("\t".join([str(entry.get(x, "0")) for x in headers]))
-
+    print("\t".join([str(data.get(x, "0")) for x in headers]))
     return ''
+
 
 if __name__ == "__main__":
     main()
