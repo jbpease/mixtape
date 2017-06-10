@@ -1,14 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
+FASTA Extract: Extract sequences from a list of headers
 
 MixTAPE: Mix of Tools for Analysis in Phylogenetics and Evolution
 http://www.github.org/jbpease/mixtape
 
-FASTA Extract: Extract sequences from a list of headers
 @author: James B. Pease
-
-@version: 2016-01-05 - Initial release
 
 This file is part of MixTAPE.
 
@@ -28,7 +26,6 @@ along with MixTAPE.  If not, see <http://www.gnu.org/licenses/>.
 
 """
 
-from __future__ import print_function, unicode_literals
 import sys
 import argparse
 from itertools import groupby
@@ -48,36 +45,31 @@ def fasta_iter(fasta_name):
 
 
 def main(arguments=sys.argv[1:]):
-    """Main method for fasta_extract"""
-    parser = argparse.ArgumentParser(description="""
-    Extract sequences from fasta file based on provided headers""")
-    parser.add_argument("--fasta", help="input MVF file", required=True)
-    parser.add_argument("--out", help="output FASTA file", required=True)
-    parser.add_argument("--labels", nargs='*',
-                        help="list of labels")
-    parser.add_argument("--labelfiles", nargs='*',
-                        help="list of files containing labels")
-    parser.add_argument("--quiet", action="store_true", default=True,
-                        help="suppress screen output")
-    parser.add_argument("-v", "--version", action="store_true",
-                        help="display version information")
+    """Main method"""
+    arguments = arguments if arguments is not None else sys.argv[1:]
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("fasta", help="input fasta file", nargs=1)
+    parser.add_argument("-l", "--labels", nargs=1,
+                        help="comma-separated list of labels")
+    parser.add_argument("-L", "--labelfile", nargs=1,
+                        help="file containing labels (one-per-line)")
+    parser.add_argument('--version', action='version',
+                        version='%(prog)s version 1')
     args = parser.parse_args(args=arguments)
-    if args.version:
-        print("Version 2016-01-05")
-        sys.exit()
     if args.labels and args.labelfiles:
-        raise RuntimeError("Cannot use both --labels and --labelfiles")
-    labels = args.labels or []
+        raise RuntimeError("Cannot use both -l/--label and -L/--labelfile")
+    labels = args.labels[:] if args.labels is not None else []
     for labelfile in args.labelfiles:
         with open(labelfile, 'r') as lblfile:
             for line in lblfile:
                 labels.append(line.strip())
-    with open(args.out, 'w') as outfile:
-        for header, seq in fasta_iter(args.fasta):
+        for header, seq in fasta_iter(args.fasta[0]):
             if header in labels:
-                outfile.write(">{}\n{}\n".format(
-                    header, seq))
+                print(">{}\n{}".format(header, seq), file=sys.stdout)
     return ''
+
 
 if __name__ == "__main__":
     main()
