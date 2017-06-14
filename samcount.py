@@ -1,15 +1,17 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+Count SAM file flags
+Author: James B. Pease
+"""
 
-MixTAPE: Mix of Tools for Analysis in Phylogenetics and Evolution
+import sys
+import os
+import argparse
+
+_LICENSE = """
 http://www.github.org/jbpease/mixtape
-
-count_sam.py: Basic analysis of SAM file to determine mapping efficiency.
-@author: James B. Pease
-
-@version: 2014-07-25 - Initial release
-version: 2016-01-28 - Initial release
+MixTAPE: Mix of Tools for Analysis in Phylogenetics and Evolution
 
 This file is part of MixTAPE.
 
@@ -25,30 +27,7 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with MixTAPE.  If not, see <http://www.gnu.org/licenses/>.
-
-
 """
-
-from __future__ import print_function, unicode_literals
-import sys
-import os
-import argparse
-
-
-def progress_meter(i, target):
-    """Tracks Progress on a Numeric Scale"""
-    tlen = len(str(target))
-    pct = str(((i) * 100)/target)
-    msg = (str(i).zfill(tlen) + "/" + str(target) + "=" + pct.zfill(3) + '%')
-    if i > 0 and i < target:
-        sys.stderr.write('\b' * len(msg) + msg)
-    elif i == 0:
-        sys.stderr.write(msg)
-    elif i == target - 1 or i == target:
-        sys.stderr.write("\b" * len(msg) + msg + " complete.\n")
-    else:
-        sys.stderr.write("ERROR")
-    return ''
 
 
 def explain_sam_flag(flag, code=None):
@@ -65,15 +44,20 @@ def explain_sam_flag(flag, code=None):
     return bool_flags
 
 
-def main(arguments=sys.argv[1:]):
-    """Main count_sam function"""
+def generate_argparser():
     parser = argparse.ArgumentParser(description="")
     parser.add_argument("samfile",
                         help="SAM file to analyze")
-    parser.add_argument("--out",
-                        help="write to output file (default=print to stdout)")
-    parser.add_argument("--quiet", action="store_true",
-                        help="suppress progress meter")
+    parser.add_argument("-o", "--out", type=os.path.abspath,
+                        default=sys.stdout,
+                        help="write to output file")
+    return parser
+
+
+def main(arguments=None):
+    """Main method"""
+    arguments = arguments if arguments is not None else sys.argv[1]
+    parser = generate_argparser()
     args = parser.parse_args(args=arguments)
     sam_flag_code = {0:  "read_paired",
                      1:  "read_mapped_in_proper_pair",
@@ -89,55 +73,35 @@ def main(arguments=sys.argv[1:]):
                      11: "supplementary_alignment"}
     flag_count = {}
     flag_bits = {}
-    if not args.quiet:
-        file_size = os.stat(args.samfile).st_size
     with open(args.samfile, 'r') as samfile:
-        if not args.quiet:
-            j = 1000000
-            progress_meter(0, file_size)
-        line = samfile.readline()
-        while line:
-            if not args.quiet:
-                j -= 1
-                if not j:
-                    j = 1000000
-                    progress_meter(samfile.tell(), file_size)
+        for line in samfile:
             if line[0] == '@':
-                line = samfile.readline()
                 continue
-            arr = line.split()
-            flag_count[arr[1]] = flag_count.get(arr[1], 0) + 1
-            line = samfile.readline()
-    if not args.quiet:
-        progress_meter(file_size, file_size)
+            row = line.split()
+            flag_count[row[1]] = flag_count.get(row[1], 0) + 1
     flag_codes = sorted([(v, k) for (k, v) in flag_count.items()],
                         reverse=True)
     total = sum(flag_count.values())
-    if not total:
+    if total < 1:
         raise SyntaxError("Nothing found in SAM file!")
-    if not args.out:
-        outfile = sys.stdout
-    else:
-        outfile = open(args.out, 'w')
-    print("Count\tFlag\tPct\tInfo", file=outfile)
+    print("count\tflag\tpct\tinfo", file=args.outfile)
     for (count, flag) in flag_codes:
-        print(("{!s}\t{!s}\t{!s}%\t{!s}"
+        print(("{}\t{}\t{}%\t{}"
                ).format(count, flag, round(float(count)*100/total, 1),
                         ';'.join(explain_sam_flag(flag, code=sam_flag_code))),
-              file=outfile)
+              file=args.outfile)
         bincode = bin(int(flag))[2:].zfill(11)[::-1]
         for j in range(len(bincode)):
             if bincode[j] == '1':
                 flag_bits[j] = flag_bits.get(j, 0) + count
-    print("", file=outfile)
-    print("\t".join(["FlagBit", "Explanation", "Count", "Pct"]),
-          file=outfile)
+    print("", file=args.outfile)
+    print("\t".join(["flagbit", "desc", "count", "pct"]),
+          file=args.outfile)
     for samcode in sorted(flag_bits.keys()):
-        print(("{!s}\t{!s}\t{!s}\t{!s}%"
+        print(("{}\t{}\t{}\t{}%"
                ).format(samcode, sam_flag_code[samcode], flag_bits[samcode],
                         round(float(flag_bits[samcode])*100/total, 1)),
-              file=outfile)
-    outfile.close()
+              file=args.outfile)
     return ''
 
 
