@@ -15,7 +15,7 @@ def main(arguments=None):
         description='Template script for general use')
     parser.add_argument('infile')
     parser.add_argument('-d', '--delim', default=',')
-    parser.add_argument('-n', '--nlines')
+    parser.add_argument('-n', '--nlines', type=int)
     parser.add_argument('--no-header', action='store_true')
     args = parser.parse_args(args=arguments)
     nlines = args.nlines + 0 if args.nlines is not None else None
