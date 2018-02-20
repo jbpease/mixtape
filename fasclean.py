@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-fasclean.py
+fixta.py
 Simple Fasta Cleanup for Standardizing Length and Labels,
 
 MixTAPE: Mix of Tools for Analysis in Phylogenetics and Evolution
@@ -29,20 +29,7 @@ along with MixTAPE.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
 import argparse
-from itertools import groupby
-
-
-def fasta_iter(fasta_name):
-    """
-        given a fasta file. yield tuples of header, sequence
-        Adapted from https://github.com/brentp
-    """
-    filehandler = open(fasta_name, 'r')
-    faiter = (x[1] for x in groupby(filehandler, lambda line: line[0] == ">"))
-    for header in faiter:
-        header = next(header)[1:].strip()
-        seq = "".join(s.strip() for s in next(faiter))
-        yield header, seq
+from mixcore import fasta_iter
 
 
 def labelmod(label, args):
@@ -98,7 +85,7 @@ def main(arguments=None):
     parser.add_argument("-l", "--labellength", type=int,
                         help="truncate label to this number of characters")
     parser.add_argument("-r", "--remchar",
-                        help=("remove these special characters"
+                        help=("remove these special characters from headers"
                               + "enter STRICT or SAFE to remove punctuation"))
     parser.add_argument("-f", "--firstlabel", action="store_true",
                         help="crop label at first whitespace (space/tab)")

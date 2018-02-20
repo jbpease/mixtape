@@ -47,6 +47,8 @@ def generate_argparser():
                         default=sys.stdout, help="output FASTA file")
     parser.add_argument('--ncol', type=int,
                         default=14, help="number of BLAST columns")
+    parser.add_argument('--pid', type=float,
+                        default=0.90, help="number of BLAST columns")
     return parser
 
 
@@ -72,6 +74,8 @@ def main(arguments=None):
     seqnames = set([])
     min_coord = 0
     for blasthit in blastdata:
+        if blasthit.pident < args.pid:
+            continue
         if blasthit.queryseq not in seqnames:
             seqnames.update([blasthit.queryseq])
             newseqs.append((0, blasthit.queryseq,
@@ -95,20 +99,28 @@ def main(arguments=None):
                 min_coord = 0 + start_coord
     max_coord = max(x[0] + len(x[2]) for x in newseqs)
     consensus = {}
-    with open(args.out, 'w') as outfile:
+    with open(args.out, 'w') as outfile, open(
+            args.out + ".con.fa", "w") as confile:
         for coord, hdr, seq in sorted(newseqs):
             outfile.write(">{}\n{}{}{}\n".format(
                 hdr,
                 '-' * (coord - min_coord),
                 seq,
                 '-' * (max_coord - coord - len(seq))))
+
             if hdr == query_hdr:
+                confile.write(">{}\n{}{}{}\n".format(
+                    hdr,
+                    '-' * (coord - min_coord),
+                    seq,
+                    '-' * (max_coord - coord - len(seq))))
                 continue
             for i in range(len(seq)):
                 xcoord = i + coord - min_coord
                 if xcoord not in consensus:
                     consensus[xcoord] = {}
-                consensus[xcoord][seq[i]] = consensus[xcoord].get(seq[i], 0) + 1
+                consensus[xcoord][seq[i]] = (
+                    consensus[xcoord].get(seq[i], 0) + 1)
         conseq = []
         print(consensus)
         for i in range(max(consensus) + 1):
@@ -116,14 +128,13 @@ def main(arguments=None):
                 conseq.append("-")
             else:
                 print(list(sorted((v, k) for k, v in
-                                consensus[i].items() if k != '-')))
+                                  consensus[i].items() if k != '-')))
                 conseq.append(
                     list(sorted((v, k) for k, v in
                                 consensus[i].items() if k != '-'))[-1][1])
-
-
-
         outfile.write(">CONSENSUS\n{}{}".format(''.join(conseq),
+                                                "-"*(max_coord - len(conseq))))
+        confile.write(">CONSENSUS\n{}{}".format(''.join(conseq),
                                                 "-"*(max_coord - len(conseq))))
     return ''
 
