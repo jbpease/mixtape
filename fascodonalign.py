@@ -105,6 +105,9 @@ def main(arguments=None):
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("infile")
     parser.add_argument("outfile")
+    parser.add_argument("--aligner", default="mafft",
+                        choices=("mafft", "prank"))
+    parser.add_argument("--aligner-exec")
     args = parser.parse_args()
     tmppath = args.infile + "." + str(randint(0, 1000000)) + ".tmp"
     tmppathout = tmppath + ".out"
@@ -114,8 +117,15 @@ def main(arguments=None):
             nucseqs[hdr] = seq[:]
             newseq = get_translation(seq)
             tempfile.write(">{}\n{}\n".format(hdr, newseq))
-    mafft_args = ['mafft --auto', tmppath, ">", tmppathout]
-    proc = subprocess.Popen(' '.join(mafft_args),
+    if args.aligner == "mafft":
+        aligner_args = [args.aligner_exec if args.aligner_exec is not None
+                        else 'mafft',
+                        '--auto', tmppath, ">", tmppathout]
+    elif args.aligner == "prank":
+        aligner_args = [args.aligner_exec if args.aligner_exec is not None
+                        else 'prank',
+                        '-d=' + tmppath, "-o=" + tmppathout]
+    proc = subprocess.Popen(' '.join(),
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
                             shell=True)
