@@ -3,10 +3,71 @@
 from itertools import groupby
 
 
+STANDARD_CODON_TABLE = {
+    "AAA": "K", "AAC": "N", "AAG": "K", "AAT": "N",
+    "ACA": "T", "ACC": "T", "ACG": "T", "ACT": "T",
+    "AGA": "R", "AGC": "S", "AGG": "R", "AGT": "S",
+    "ATA": "I", "ATC": "I", "ATG": "M", "ATT": "I",
+    "CAA": "Q", "CAC": "H", "CAG": "Q", "CAT": "H",
+    "CCA": "P", "CCC": "P", "CCG": "P", "CCT": "P",
+    "CGA": "R", "CGC": "R", "CGG": "R", "CGT": "R",
+    "CTA": "L", "CTC": "L", "CTG": "L", "CTT": "L",
+    "GAA": "E", "GAC": "D", "GAG": "E", "GAT": "D",
+    "GCA": "A", "GCC": "A", "GCG": "A", "GCT": "A",
+    "GGA": "G", "GGC": "G", "GGG": "G", "GGT": "G",
+    "GTA": "V", "GTC": "V", "GTG": "V", "GTT": "V",
+    "TAA": "*", "TAC": "Y", "TAG": "*", "TAT": "Y",
+    "TCA": "S", "TCC": "S", "TCG": "S", "TCT": "S",
+    "TGA": "*", "TGC": "C", "TGG": "W", "TGT": "C",
+    "TTA": "L", "TTC": "F", "TTG": "L", "TTT": "F"
+    }
+
+
 def complement(seq):
     return seq[::-1].lower().replace(
         'a', 'T').replace('t', 'A').replace(
             'c', 'G').replace('g', 'C')
+
+def translate(seq):
+    """Returns translated amino acids from nucleotides"""
+    aa_seq = []
+    for i in range(int(len(seq) / 3.0) + 1):
+        codon = seq[i * 3:(i + 1)*3].upper().replace('U', 'T')
+        if not codon:
+            break
+        if all(x == "-" for x in codon):
+            aa_seq.append('-')
+        elif (len(set(codon) - set('ATGCU')) > 0) or (len(codon) < 3):
+            aa_seq.append('X')
+        else:
+            aa_seq.append(STANDARD_CODON_TABLE[codon])
+    return ''.join(aa_seq)
+
+
+def untranslate(amino_acids, nucleotides, firststop=False):
+    """Converts an aligned amino acid sequence
+    back to codons while maintaining gaps"""
+    nucleotides = nucleotides.strip().replace('-', '')
+    codons = ''
+    j = 0
+    for i in range(len(amino_acids)):
+        if amino_acids[i] == '*' and firststop:
+            return codons
+        elif amino_acids[i] == '-':
+            codons += '---'
+        else:
+            codons += nucleotides[j:j+3]
+            j += 3
+    return codons
+
+
+
+
+
+
+
+
+
 
 
 def fasta_iter(fasta_name):
@@ -87,20 +148,24 @@ class BlastSet(object):
 
     def add_tabular(self, arr, ncol=12):
         """Reads a standard 12-column blast input as list"""
-        xstart = 0 if ncol == 12 else 2
-        self.hits.append(BlastHit(
-            queryseq=arr[0],
-            subjectseq=arr[1],
-            pident=arr[2 + xstart],
-            length=arr[3 + xstart],
-            mismatches=arr[4 + xstart],
-            gaps=arr[5 + xstart],
-            query_start=arr[6 + xstart],
-            query_end=arr[7 + xstart],
-            subject_start=arr[8 + xstart],
-            subject_end=arr[9 + xstart],
-            evalue=arr[10 + xstart],
-            bitscore=arr[11 + xstart]))
+        print(arr)
+        try:
+            xstart = 0 if ncol == 12 else 2
+            self.hits.append(BlastHit(
+                queryseq=arr[0],
+                subjectseq=arr[1],
+                pident=arr[2 + xstart],
+                length=arr[3 + xstart],
+                mismatches=arr[4 + xstart],
+                gaps=arr[5 + xstart],
+                query_start=arr[6 + xstart],
+                query_end=arr[7 + xstart],
+                subject_start=arr[8 + xstart],
+                subject_end=arr[9 + xstart],
+                evalue=arr[10 + xstart],
+                bitscore=arr[11 + xstart]))
+        except:
+            pass
         return ''
 
     def parse_blast(self, blastfile, ncol=12):
