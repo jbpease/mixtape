@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# vim:fileencoding=utf-8
+
+"""
+TRANSLATE FASTA
+James B. Pease
+"""
+
+import os
+import sys
+import argparse
+from mixcore import fasta_iter
+
+_LICENSE = """
+http://www.github.org/jbpease/mixtape
+MixTAPE: Mix of Tools for Analysis in Phylogenetics and Evolution
+
+This file is part of MixTAPE.
+
+MixTAPE is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+MixTAPE is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with MixTAPE.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+
+def generate_argparser():
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        epilog=_LICENSE)
+    parser.add_argument('fasta', type=os.path.abspath,
+                        help="input fasta file")
+    parser.add_argument('--out', type=os.path.abspath,
+                        default=sys.stdout, help="output fasta file")
+    parser.add_argument("--length", type=int,
+                        help=("Trim label to specified length, "
+                              "(default first whitespace)")
+    parser.add_argument("--delimiter",
+                        help=("Trim label to specified character. "
+                              "(default first whitespace)")
+    return parser
+
+
+def main(arguments=None):
+    arguments = arguments if arguments is not None else sys.argv[1:]
+    parser = generate_argparser()
+    args = parser.parse_args(args=arguments)
+    for hdr, seq in fasta_iter(args.fasta):
+        if args.length is not None:
+            hdr = hdr[:args.length] 
+        elif args.delimiter is not None:
+            if args.delimiter in hdr:
+                hdr = hdr[:hdr.find(args.delimiter)]
+        else:
+            hdr = hdr.split()[0]
+        print(">{}\n{}".format(hdr, seq))
+    return ''
+
+
+if __name__ == '__main__':
+    main()
