@@ -10,9 +10,8 @@ James B. Pease
 import os
 import sys
 import argparse
-from mixcore import fasta_text_iter
+from mixcore import fasta_iter
 from random import sample as rsample
-from itertools import tee
 
 _LICENSE = """
 http://www.github.org/jbpease/mixtape
@@ -94,7 +93,7 @@ def generate_argparser():
         description=__doc__,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         epilog=_LICENSE)
-    parser.add_argument('fasta', nargs='?', type=argparse.FileType('r'),
+    parser.add_argument('fasta', type=os.path.abspath,
                         default=sys.stdin,
                         help="input fasta file")
     parser.add_argument('--out', type=os.path.abspath,
@@ -117,12 +116,10 @@ def main(arguments=None):
     args = parser.parse_args(args=arguments)
     headers = []
     distances = {}
-    fasta0, fasta1 = tee(fasta_text_iter(args.fasta), 2)
-    for hdr0, seq0 in fasta0:
+    for hdr0, seq0 in fasta_iter(args.fasta):
         headers.append(hdr0)
         distances[(hdr0, hdr0)] = 0.0
-        for hdr1, seq1 in fasta1:
-            print(hdr0, hdr1)
+        for hdr1, seq1 in fasta_iter(args.fasta):
             if (hdr0, hdr1) in distances:
                 continue
             else:

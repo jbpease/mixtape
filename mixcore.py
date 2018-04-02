@@ -8,11 +8,11 @@ class CSVfile(object):
     "field-delimited data file"
 
     def __init__(self, fpath, delimiter=",",
-                 colheader=True):
+                 colheaders=True):
         self.path = os.path.abspath(fpath)
         self.delimiter = delimiter
-        self.colheader = colheader
-        if self.colheader is True:
+        self.colheaders = colheaders
+        if self.colheaders is True:
             with open(self.path) as csvfile:
                 self.colheaders = csvfile.readline().split(
                     self.delimiter)
@@ -21,7 +21,7 @@ class CSVfile(object):
         firstline = True
         with open(self.path) as csvfile:
             for line in csvfile:
-                if self.colheader is True and firstline is True:
+                if self.colheaders is not False and firstline is True:
                     firstline = False
                     continue
                 yield line.rstrip().split(self.delimiter)
