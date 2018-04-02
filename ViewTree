@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# vim:fileencoding=utf-8
+
+import os
+import sys
+import argparse
+from Bio import Phylo
+
+_LICENSE = """
+http://www.github.org/jbpease/mixtape
+MixTAPE: Mix of Tools for Analysis in Phylogenetics and Evolution
+
+This file is part of MixTAPE.
+
+MixTAPE is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+MixTAPE is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with MixTAPE.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+
+def generate_argparser():
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        epilog=_LICENSE)
+    parser.add_argument('treefile', nargs='?', type=argparse.FileType('r'),
+                        default=sys.stdin,
+                        help="input newick tree file")
+    parser.add_argument('--out', type=os.path.abspath,
+                        default=sys.stdout, help="output fasta file")
+    return parser
+
+
+def main(arguments=None):
+    arguments = arguments if arguments is not None else sys.argv[1:]
+    parser = generate_argparser()
+    args = parser.parse_args(args=arguments)
+    tree = Phylo.read(args.infile, 'newick')
+    Phylo.draw_ascii(tree)
+    for clade in tree.get_nonterminals():
+        subnodes = ';'.join([x.name for x in clade.get_terminals()])
+        print(subnodes, "=", clade.name, file=args.out)
+
+    return ''
+
+
+if __name__ == '__main__':
+    main()

@@ -1,6 +1,30 @@
 # -*- coding: utf-8 -*-
 
+import os
 from itertools import groupby
+
+
+class CSVfile(object):
+    "field-delimited data file"
+
+    def __init__(self, fpath, delimiter=",",
+                 colheader=True):
+        self.path = os.path.abspath(fpath)
+        self.delimiter = delimiter
+        self.colheader = colheader
+        if self.colheader is True:
+            with open(self.path) as csvfile:
+                self.colheaders = csvfile.readline().split(
+                    self.delimiter)
+
+    def __iter__(self):
+        firstline = True
+        with open(self.path) as csvfile:
+            for line in csvfile:
+                if self.colheader is True and firstline is True:
+                    firstline = False
+                    continue
+                yield line.rstrip().split(self.delimiter)
 
 
 STANDARD_CODON_TABLE = {
@@ -27,6 +51,7 @@ def complement(seq):
     return seq[::-1].lower().replace(
         'a', 'T').replace('t', 'A').replace(
             'c', 'G').replace('g', 'C')
+
 
 def translate(seq):
     """Returns translated amino acids from nucleotides"""
@@ -61,15 +86,6 @@ def untranslate(amino_acids, nucleotides, firststop=False):
     return codons
 
 
-
-
-
-
-
-
-
-
-
 def fasta_iter(fasta_name):
     """
         given a fasta file. yield tuples of header, sequence
@@ -82,6 +98,16 @@ def fasta_iter(fasta_name):
         seq = "".join(s.strip() for s in next(faiter))
         yield header, seq
 
+def fasta_text_iter(filehandler):
+    """
+        given a fasta file. yield tuples of header, sequence
+        Adapted from https://github.com/brentp
+    """
+    faiter = (x[1] for x in groupby(filehandler, lambda line: line[0] == ">"))
+    for header in faiter:
+        header = next(header)[1:].strip()
+        seq = "".join(s.strip() for s in next(faiter))
+        yield header, seq
 
 def overlap_range(range0, range1, inclusive=True):
     """
