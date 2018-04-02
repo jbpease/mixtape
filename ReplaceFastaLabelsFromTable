@@ -1,0 +1,94 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# vim:fileencoding=utf-8
+
+"""
+TRANSLATE FASTA
+James B. Pease
+"""
+
+import os
+import sys
+import argparse
+from mixcore import fasta_text_iter
+
+_LICENSE = """
+http://www.github.org/jbpease/mixtape
+MixTAPE: Mix of Tools for Analysis in Phylogenetics and Evolution
+
+This file is part of MixTAPE.
+
+MixTAPE is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+MixTAPE is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with MixTAPE.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+
+def generate_argparser():
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        epilog=_LICENSE)
+    parser.add_argument('fasta', nargs='?', type=argparse.FileType('r'),
+                        default=sys.stdin,
+                        help="input fasta file")
+    parser.add_argument("--tsv", type=os.path.abspath,
+                        help="TSV file")
+    parser.add_argument("--csv", type=os.path.abspath,
+                        help="CSV file")
+    parser.add_argument('--out', type=os.path.abspath,
+                        default=sys.stdout, help="output fasta file")
+    parser.add_argument("--exact", action="store_true",
+                        help="exact matching (default=inexact)")
+    parser.add_argument("--colsearch", type=int, default=1,
+                        help="1-based column index for search term")
+    parser.add_argument("--colreplace", type=int, default=2,
+                        help="1-based column index for replace term")
+    return parser
+
+
+def main(arguments=None):
+    arguments = arguments if arguments is not None else sys.argv[1:]
+    parser = generate_argparser()
+    args = parser.parse_args(args=arguments)
+    newlabels = {}
+    if args.csv is not None and args.tsv is not None:
+        raise RuntimeError("--tsv and --csv should not be used together")
+    if args.csv is None and args.tsv is None:
+        raise RuntimeError("--tsv or --csv required")
+    if args.csv is not None:
+        with open(args.csv) as csvfile:
+            for line in csvfile:
+                entry = line.rstrip().split(',')
+                newlabels[entry[args.colsearch - 1]] = entry[args.colreplace - 1]
+    if args.tsv is not None:
+        with open(args.tsv) as tsvfile:
+            for line in tsvfile:
+                entry = line.rstrip().split('\t')
+                newlabels[entry[args.colsearch - 1]] = entry[args.colreplace - 1]
+    for hdr, seq in fasta_text_iter(args.fasta):
+        newlabel = None
+        if args.exact is True:
+            newlabel = newlabels.get(hdr, None)
+        else:
+            for tag in newlabels:
+                if tag in hdr:
+                    newlabel = newlabels[tag]
+                    break
+        if newlabel is None:
+            raise RuntimeError("'{}' exact match not found in table".format(hdr))
+        print(">{}\n{}".format(newlabel, seq))
+    return ''
+
+
+if __name__ == '__main__':
+    main()
