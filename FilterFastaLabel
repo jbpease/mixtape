@@ -60,6 +60,8 @@ def main(arguments=sys.argv[1:]):
     for header, seq in fasta_text_iter(args.fasta):
         if header in labels:
             print(">{}\n{}".format(header, seq), file=args.out)
+            labels.remove(header)
+    print(labels, "not found", file=sys.stderr)
     return ''
 
 

@@ -81,7 +81,7 @@ def untranslate(amino_acids, nucleotides, firststop=False):
         elif amino_acids[i] == '-':
             codons += '---'
         else:
-            codons += nucleotides[j:j+3]
+            codons += nucleotides[j:j+3] + "-" * (3-len(nucleotides[j:j+3]))
             j += 3
     return codons
 

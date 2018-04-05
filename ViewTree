@@ -38,6 +38,8 @@ def generate_argparser():
                         help="input newick tree file")
     parser.add_argument('--out', type=os.path.abspath,
                         default=sys.stdout, help="output fasta file")
+    parser.add_argument('--figsize', type=float, nargs=2,
+                        help="fixed height/width in inches for figure")
     return parser
 
 
@@ -45,12 +47,22 @@ def main(arguments=None):
     arguments = arguments if arguments is not None else sys.argv[1:]
     parser = generate_argparser()
     args = parser.parse_args(args=arguments)
-    tree = Phylo.read(args.infile, 'newick')
-    Phylo.draw_ascii(tree)
-    for clade in tree.get_nonterminals():
-        subnodes = ';'.join([x.name for x in clade.get_terminals()])
-        print(subnodes, "=", clade.name, file=args.out)
-
+    tree = Phylo.read(args.treefile, 'newick')
+    tree.root_at_midpoint()
+    tree.ladderize()
+    if args.out.endswith(".pdf"):
+        from matplotlib import pyplot as plt 
+        if args.figsize is not None: 
+            fig = plt.figure(figsize=(args.figsize[0], args.figsize[1]), )
+        else:
+            fig = plt.figure()
+        ax1 = fig.add_subplot(111)
+        Phylo.draw(tree, axes=ax1, do_show=False)
+        fig.tight_layout()
+        fig.savefig(args.out)
+    else:
+        Phylo.draw_ascii(tree)
+    
     return ''
 
 

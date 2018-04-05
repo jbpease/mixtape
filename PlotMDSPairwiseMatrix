@@ -12,7 +12,7 @@ import sys
 import argparse
 import numpy as np
 from sklearn.manifold import MDS
-from matplotlib import pyplot as plt
+from matplotlib import pyplot as plt, cm, colors
 from mixcore import CSVfile
 
 _LICENSE = """
@@ -36,6 +36,8 @@ along with MixTAPE.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 
+
+
 def generate_argparser():
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -50,8 +52,12 @@ def generate_argparser():
                         help="label delimeter")
     parser.add_argument("--labelfield",
                         help="label delimited fields")
+    parser.add_argument("--groupfield", type=int,
+                        help="label delimited field for the group for the key")
     parser.add_argument('--out', type=os.path.abspath,
                         default=sys.stdout, help="output fasta file")
+    parser.add_argument('--figsize', type=float, nargs=2,
+                        help="fixed height/width in inches for figure")
     return parser
 
 
@@ -62,6 +68,13 @@ def main(arguments=None):
     csvfile = CSVfile(args.pwdist, delimiter="," if args.tsv is False else "\t")
     nseqs = len(csvfile.colheaders) - 1
     arr = np.zeros((nseqs, nseqs))
+    cmap = cm.tab20
+    norm = colors.Normalize(vmin=1, vmax=20)
+    if args.figsize is not None: 
+        fig = plt.figure(figsize=(args.figsize[0], args.figsize[1]), )
+    else:
+        fig = plt.figure()
+    ax1 = fig.add_subplot(111)
     i = 0
     for entry in csvfile:
         #print(entry)
@@ -72,19 +85,29 @@ def main(arguments=None):
     mds = MDS(n_components=2, dissimilarity='precomputed') #, max_iter=10000)
     results = mds.fit(arr)
     coords = results.embedding_
-    plt.subplots_adjust(bottom=0.1)
+    # if args.groupfield is not None:
+    rep = set([])
     for label, x, y in zip(csvfile.colheaders[1:], coords[:, 0], coords[:, 1]):
+        grplabel = "_nolegend_"
         if args.labeldelim is not None:
             label = label.split(args.labeldelim)
+            if args.groupfield is not None:
+                grplabel = label[int(args.groupfield)]
             label = args.labeldelim.join([label[int(x)] for x in args.labelfield.split(',')])
-        plt.scatter(x, y, marker='o', edgecolors='k', facecolors='none', s=3)
-        plt.annotate(
+            ax1.scatter(x, y, marker='o', s=3, c=cmap(
+                norm(int(grplabel[1:]) if (args.groupfield is not None and grplabel[-1] != 'x') else 0)),
+                    label=grplabel if (
+                        grplabel is not None and grplabel not in rep
+                        ) else "_nolegend_")
+        ax1.annotate(
             # "-".join(label.split("-")[1:3]),
-            label,
-                     xy=(x, y), xytext=(-1, 1), size="4",
-                     textcoords='offset points', ha='right', va='bottom')
+            label, xy=(x, y), xytext=(-1, 1), size="4",
+                 textcoords='offset points', ha='right', va='bottom')
+        if grplabel not in rep:
+            rep.update([grplabel])
     # plt.show()
-    # plt.legend()
+    ax1.legend(prop={'size': 4})
+    plt.tight_layout()
     plt.savefig(args.out)
     return ''
 

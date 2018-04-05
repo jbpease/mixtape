@@ -57,7 +57,7 @@ def main(arguments=None):
     if args.replace is None:
         args.replace = ""
     for hdr, seq in fasta_text_iter(args.fasta):
-        print(">{}\n{}".format(hdr.replace(args.search, args.replace), seq))
+        print(">{}\n{}".format(hdr.replace(args.search, args.replace), seq), file=args.out)
     return ''
 
 

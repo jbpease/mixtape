@@ -48,6 +48,12 @@ def generate_argparser():
                         help="tab-delimited (default:comma-delimited)")
     parser.add_argument('--out', type=os.path.abspath,
                         default=sys.stdout, help="output fasta file")
+    parser.add_argument('--minscale', type=float,
+                        help="fixed minimum value for scale")
+    parser.add_argument('--maxscale', type=float,
+                        help="fixed maximum value for scale")
+    parser.add_argument('--figsize', type=float, nargs=2,
+                        help="fixed height/width in inches for figure")
     return parser
 
 
@@ -59,19 +65,39 @@ def main(arguments=None):
     nseqs = len(csvfile.colheaders) - 1
     arr = np.zeros((nseqs, nseqs))
     i = 0
+    if args.figsize is not None: 
+        fig = plt.figure(figsize=(args.figsize[0], args.figsize[1]), )
+    else:
+        fig = plt.figure()
+    ax1 = fig.add_subplot(111)
     for entry in csvfile:
         #print(entry)
         for j in range(1, len(entry)):
             arr[i][j - 1] = float(entry[j])
             arr[j - 1][i] = float(entry[j])
         i += 1
-    mds = MDS(n_components=2, dissimilarity='precomputed', max_iter=10000)
-    results = mds.fit(arr)
-    coords = results.embedding_
-    plt.subplots_adjust(bottom=0.1)
-    plt.imshow(arr, cmap='hot', interpolation='nearest')
-    # plt.show()
+    ordering = np.argsort(arr)[0]
+    print(ordering)
+    #ordering = tuple(sorted([x, i] for i, x in enumerate(arr[0])))
+    #ordering = [x[1] for x in ordering]
+    newarr = arr[ordering]
+    newarr = newarr[:,ordering]
+    # mds = MDS(n_components=2, dissimilarity='precomputed', max_iter=10000)
+    # results = mds.fit(arr)
+    # coords = results.embedding_
+    # ax1.subplots_adjust(bottom=0.1)
+    heatmap = ax1.imshow(newarr, cmap='YlGnBu', interpolation='nearest',
+                         vmin=args.minscale if args.minscale is not None else np.min(arr),
+                         vmax=args.maxscale if args.maxscale is not None else np.max(arr),
+                         )
+    ticklabels = ['-'.join(csvfile.colheaders[x+1].split("-")[:3]) for x in ordering]
+    plt.xticks(np.arange(nseqs) + 0.5, ticklabels, rotation='vertical', size=4)
+    plt.yticks(np.arange(nseqs) + 0.5, ticklabels, size=4)
+    #  plt.show()
+    cb = plt.colorbar(heatmap, shrink=0.3)
+    cb.ax.tick_params(labelsize=4)
     # plt.legend()
+    plt.tight_layout()
     plt.savefig(args.out)
     return ''
 
