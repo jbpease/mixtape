@@ -43,6 +43,8 @@ def generate_argparser():
                         help="input fasta file")
     parser.add_argument('--out', type=os.path.abspath,
                         default=sys.stdout, help="output fasta file")
+    parser.add_argument('--nolabel', action="store_true",
+                        help="output fasta file")
     return parser
 
 
@@ -51,7 +53,10 @@ def main(arguments=None):
     parser = generate_argparser()
     args = parser.parse_args(args=arguments)
     for hdr, seq in fasta_text_iter(args.fasta):
-        print(hdr, len(seq), file=args.out)
+        if args.nolabel is True:
+            print(len(seq), file=args.out)
+        else:
+            print(hdr, len(seq), file=args.out)
     return ''
 
 

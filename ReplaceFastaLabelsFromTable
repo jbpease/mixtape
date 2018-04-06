@@ -53,6 +53,8 @@ def generate_argparser():
                         help="1-based column index for search term")
     parser.add_argument("--colreplace", type=int, default=2,
                         help="1-based column index for replace term")
+    parser.add_argument("--strict", action="store_true",
+                        help="exit program if match not found")
     return parser
 
 
@@ -84,8 +86,10 @@ def main(arguments=None):
                 if tag in hdr:
                     newlabel = newlabels[tag]
                     break
-        if newlabel is None:
+        if newlabel is None and args.strict is True:
             raise RuntimeError("'{}' exact match not found in table".format(hdr))
+        if newlabel is None and args.strict is False:
+            print("'{}' exact match not found in table".format(hdr))
         print(">{}\n{}".format(newlabel, seq))
     return ''
 

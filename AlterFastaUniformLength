@@ -43,6 +43,8 @@ def generate_argparser():
                         help="input fasta file")
     parser.add_argument('--out', type=os.path.abspath,
                         default=sys.stdout, help="output fasta file")
+    parser.add_argument('--fixed', type=int,
+                        help="set to fixed length")
     return parser
 
 
@@ -54,7 +56,13 @@ def main(arguments=None):
     for _, seq in fasta_text_iter(args.fasta):
         maxlen = max(len(seq), maxlen)
     for hdr, seq in fasta_text_iter(args.fasta):
-        print(">{}\n{}".format(newlabel, seq + "-" * maxlen - len(seq)))
+        seq = seq + "-" * (maxlen - len(seq))
+        if args.fixed is not None:
+            if len(seq) < args.fixed:
+                seq = seq[:args.fixed]
+            else:
+                seq = seq + "-" * (args.fixed - len(seq))
+        print(">{}\n{}".format(newlabel, seq))
     return ''
 
 
