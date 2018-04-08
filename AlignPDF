@@ -1,0 +1,231 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# vim:fileencoding=utf-8
+
+"""
+Convert Alignment to a LaTeX PDF
+"""
+
+import argparse
+import sys
+from mixcore import fasta_iter
+
+PROTCOLORLIB = dict(
+    [(x, '|{\color{Blue}' + x + "}|") for x in 'AFILMVW'] + 
+    [(x, '|{\color{PineGreen}' + x + "}|") for x in 'HY'] + 
+    [(x, '|{\color{RoyalPurple}' + x + "}|") for x in 'DE'] + 
+    [(x, '|{\color{red}' + x + "}|") for x in 'KR'] + 
+    [(x, '|{\color{OliveGreen}' + x + "}|") for x in 'NQST'] + 
+    [(x, '|{\color{BurntOrange}' + x + "}|") for x in 'G'] + 
+    [(x, '|{\color{Dandelion}' + x + "}|") for x in 'C'] + 
+    [(x, '|{\color{RedOrange}' + x + "}|") for x in 'P']
+) 
+
+NUCCOLORLIB = dict(
+    [(x, '|{\color{Blue}' + x + "}|") for x in 'TU'] + 
+    [(x, '|{\color{PineGreen}' + x + "}|") for x in 'C'] + 
+    [(x, '|{\color{red}' + x + "}|") for x in 'A'] + 
+    [(x, '|{\color{Dandelion}' + x + "}|") for x in 'G'] + 
+) 
+
+def most_common_nuc(dict_seq, maxlen, gap_con_start=1, gap_con_end=0):
+    consensus = []
+    for i in range(maxlen):
+        nucs = [dict_seq[x][i] for x in dict_seq]
+        if (float(i) / maxlen < (1 - gap_con_end)) and (
+                float(i) / maxlen > gap_con_start):
+            nucs = sorted([(nucs.count(x), x)
+                           for x in set(nucs)], reverse=True)
+        else:
+            nucs = sorted([(nucs.count(x), x) for x in set(nucs)
+                           if x != '-'], reverse=True)
+
+        if nucs:
+            # if nucs[0][1] == '-':
+            # consensus.append(maxlen - 100 < i < 200 and nucs[1][1] or '-')
+            # else:
+            consensus.append(nucs[0][1])
+        # print(nucs)
+    return ''.join(consensus)
+
+
+def ref_mask(ref, target, hlindel=False):
+    mask_seq = []
+    for i, base in enumerate(target):
+        if ref[i] == base and base == '-':
+            mask_seq.append('-')
+        elif ref[i] != '-' and base == '-':
+            if i == 0 or i == len(target) - 1:
+                mask_seq.append("-")
+            elif (mask_seq[-1] == 'I' or target[i - 1] != '-') and not (
+                    all(x == '-' for x in target[i + 1:])):
+                mask_seq.append(hlindel is True and 'I'or '-')
+            else:
+                mask_seq.append("-")
+        else:
+            mask_seq.append(base != ref[i] and base or '.')
+    return ''.join(mask_seq)
+
+
+def highlight_indel(header, seq):
+    # return seq
+    if 'I' not in seq:
+        return header, seq
+    coords = [None, None]
+    newstr = [seq[0]]
+    indeltype = None
+    for i in range(1, len(seq) - 1):
+        if seq[i] == 'I':
+            if seq[i - 1] != 'I':
+                coords[0] = i + 0
+            if seq[i + 1] != 'I':
+                if coords[0] is not None and coords[1] != len(seq) - 1:
+                    coords[1] = i + 1
+                    if (coords[1] - coords[0]) % 3 == 0:
+                        newstr.append("|\\indelhl{")
+                        indeltype = 'inframe'
+                    else:
+                        newstr.append("|\\fshl{")
+                        indeltype = "frameshift"
+                    newstr.extend(['-']*(coords[1] - coords[0]))
+                    newstr.append("}|")
+                    coords = [None, None]
+        else:
+            newstr.append(seq[i])
+    newstr.append(seq[i])
+    if indeltype == 'frameshift':
+        header = "|\\fshl{" + header.replace("_", "\_") + "}| "
+    if indeltype == 'inframe':
+        header = "|\\indelhl{" + header.replace("_", "\_") + "}| "
+    return header, ''.join(newstr)
+
+def colorize_seq(seq, mode='nuc'):
+    if mode == 'prot':
+        return ''.join([PROTCOLORLIB.get(x, x)  for x in seq])
+    return ''.join([NUCCOLORLIB.get(x, x)  for x in seq])
+
+
+def main(arguments=None):
+    arguments = arguments if arguments is not None else sys.argv[1:]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("fasta")
+    parser.add_argument("outfile")
+    parser.add_argument("--nlabel", type=int, default=20)
+    parser.add_argument("--nseq", type=int, default=100)
+    parser.add_argument("--nline", type=int, default=90)
+    parser.add_argument("--colorprot", action='store_true')
+    parser.add_argument("--colornuc", action='store_true')
+    parser.add_argument("--treefile")
+    parser.add_argument("--reference", default="")
+    parser.add_argument("--gap_con_end", type=float, default=0)
+    parser.add_argument("--gap_con_start", type=float, default=1)
+    parser.add_argument("--upper", action="store_true")
+    parser.add_argument("--hindel", action='store_true')
+    args = parser.parse_args(args=arguments)
+    seq_order = []
+    dict_seq = {}
+    for header, seq in fasta_iter(args.fasta):
+        dict_seq[header] = seq if args.upper is False else seq.upper()
+        seq_order.append(header)
+    max_length = max([len(x) for x in dict_seq.values()])
+    for seq in dict_seq:
+        dict_seq[seq] = (dict_seq[seq]
+                         + '-' * (max_length - len(dict_seq[seq])))
+    ref_seq = None
+    if args.reference:
+        if args.reference == "CONSENSUS":
+            ref_seq = most_common_nuc(dict_seq, max_length,
+                                      gap_con_end=args.gap_con_end,
+                                      gap_con_start=args.gap_con_start)
+        else:
+            for seqlabel in dict_seq:
+                if args.reference in seqlabel:
+                    ref_seq = dict_seq[seqlabel] + '-' * (
+                        max_length - len(dict_seq[seqlabel]))
+                    print(seqlabel, 'used as ref')
+                    break
+    if args.treefile:
+        from Bio import Phylo
+        seq_order = []
+        tree = Phylo.read(args.treefile, 'newick')
+        tree.ladderize()
+        for node in tree.get_terminals(order="preorder"):
+            seq_order.append(node.name.replace("'", ""))
+
+        ntree = 0
+        for seqname in seq_order:
+            if seqname not in dict_seq:
+                print(seqname, 'not found in alignment')
+                ntree += 1
+        print(ntree, 'not found')
+    i = 0
+    with open(args.outfile, 'w') as outfile:
+        outfile.write(
+            "\\documentclass[7pt]{article}\n"
+            "\\usepackage[letterpaper, margin=0.25in]{geometry}\n"
+            "\\renewcommand*\\ttdefault{pcr}\n"
+            "\\usepackage{listings}\n"
+            "\\usepackage[dvipsnames]{xcolor}\n"
+            "\\usepackage{adjustbox}\n"
+            "\\lstset{\n"
+            "  basicstyle=\\ttfamily,\n"
+            "  escapeinside=||\n"
+            "}\n"
+            "\\newcommand\\indelhl[1]{%\n"
+            "\t\\adjustbox{set height=2mm,bgcolor=green,margin=0}{#1}%\n"
+            "}%\n"
+            "\\newcommand\\fshl[1]{%\n"
+            "\t\\adjustbox{set height=2mm,bgcolor=orange,margin=0}{#1}%\n"
+            "}%\n"
+            "\\begin{document}\n"
+            "\\fontsize{2.75mm}{2.95mm}\\bfseries\\begin{lstlisting}\n")
+        while i < max_length:
+            linecount = 0
+            for seqname in seq_order:
+                if seqname not in dict_seq:
+                    print(seqname, 'not found on tree')
+                    continue
+                if linecount % args.nline == 0:
+                    outfile.write('NAME{}{}\n'.format(
+                        ' ' * (args.nlabel - 2),
+                        ''.join([str(x + 1) + ' '*(10-len(str(x + 1)))
+                                 for x in range(i, i+args.nseq, 10)])))
+                    linecount += 1
+                    if args.reference == "CONSENSUS":
+                        outfile.write('CONSENSUS{}{}\n'.format(
+                            ' '*(2 + max(args.nlabel - 9, 0)),
+                            ref_seq[:args.nseq]))
+                        linecount += 1
+                    if args.reference:
+                        sub_ref = ref_seq[:args.nseq]
+                linecount += 1
+                header = seqname[:args.nlabel][:]
+                # header = header.replace("_", "\_")
+                if args.reference and args.reference not in seqname:
+                    seq = ref_mask(sub_ref, dict_seq[seqname][:args.nseq],
+                                   hlindel=args.hindel)
+                    if args.hindel is True and "I" in seq:
+                        header, seq = highlight_indel(header, seq)
+                else:
+                    seq = dict_seq[seqname][:args.nseq]
+                if args.colorprot is True:
+                    seq = colorize_seq(seq, mode='prot')
+                if args.colornuc is True:
+                    seq = colorize_seq(seq, mode='nuc')
+                outfile.write("{}{}{}\n".format(
+                    header,
+                    ' '*(2 + max(args.nlabel - len(seqname), 0)),
+                    seq))
+                dict_seq[seqname] = dict_seq[seqname][args.nseq:]
+            if args.reference:
+                ref_seq = ref_seq[args.nseq:]
+            outfile.write('\n' * (args.nline - linecount % args.nline))
+            i += args.nseq
+        outfile.write(
+            "\\end{lstlisting}\n"
+            "\\end{document}\n"
+            )
+    return ''
+
+if __name__ == "__main__":
+    main()
