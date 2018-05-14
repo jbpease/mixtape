@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# vim:fileencoding=utf-8
+
+"""
+Count kmer strings from FASTA file
+James B. Pease
+"""
+
+import os
+import sys
+import argparse
+from itertools import groupby
+from mixcore import fasta_iter
+
+_LICENSE = """
+http://www.github.org/jbpease/mixtape
+MixTAPE: Mix of Tools for Analysis in Phylogenetics and Evolution
+
+This file is part of MixTAPE.
+
+MixTAPE is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+MixTAPE is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with MixTAPE.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+
+def generate_argparser():
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        epilog=_LICENSE)
+    parser.add_argument("fasta", help="input FASTA file",
+                        type=os.path.abspath)
+    parser.add_argument("--out", help="output kmer output",
+                        default=sys.stdout, type=os.path.abspath)
+    parser.add_argument("--cols", nargs=1,
+                        help="comma-separated 1-based column indices")
+    return parser
+
+
+def main(arguments=None):
+    arguments = arguments if arguments is not None else sys.argv[1:]
+    parser = generate_argparser()
+    args = parser.parse_args(args=arguments)
+    kmers = {}
+    cols = [int(x) for x in args.split(",")]
+    for _, seq in fasta_iter(args.fasta):
+        kmer = ''.join([seq[x] for x in cols])
+        kmers[kmer] = kmers.get(kmer, 0) + 1
+    for count, kmer in sorted(
+            [(v, k) for (k, v) in kmers.items()], reverse=True):
+        print("{}\t{}\n".format(count, kmer), file=args.out)
+    return ''
+
+
+if __name__ == '__main__':
+    main()
