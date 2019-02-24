@@ -44,6 +44,7 @@ def generate_argparser():
                         help="output the duplicate sequences to this file")
     parser.add_argument('--out', type=os.path.abspath,
                         default=sys.stdout, help="output fasta file")
+    parser.add_argument("--ignore-gap", action="store_true")
     return parser
 
 
@@ -54,14 +55,42 @@ def main(arguments=sys.argv[1:]):
     parser = generate_argparser() 
     args = parser.parse_args(args=arguments)
     labels = []
-    unique = set([])
-    for header, seq in fasta_text_iter(args.fasta):
-        if seq in unique:
-            if args.dup is not None:
-                print(">{}\n{}".format(header, seq), file=args.dup)
+    unique = ([])
+    if args.ignore_gap is False:
+        for header, seq in fasta_text_iter(args.fasta):
+            if seq in unique:
+                if args.dup is not None:
+                    print(">{}\n{}".format(header, seq), file=args.dup)
+                    continue
+            unique.update([seq])
+            print(">{}\n{}".format(header, seq), file=args.out)
+    else:
+        lengths = {}
+        seqs = []
+        dups = set([])
+        for header, seq in fasta_text_iter(args.fasta):
+            seqs.append((header, seq))
+        for i, (h0, s0) in enumerate(seqs):
+            if i in dups:
                 continue
-        unique.update(seq)
-        print(">{}\n{}".format(header, seq), file=args.out)
+            for j, (h1, s1) in enumerate(seqs):
+                if j <= i:
+                    continue
+                if j in dups:
+                    continue
+                if all(s0[x] == s1[x] or s1[x] == '-' or s0[x] == '-' for x in range(len(s0))):
+                    if len(s1) - s1.count("-") > len(s0) - s0.count("-"):
+                        dups.update((i,))
+                        break
+                    else:
+                        dups.update((j,))
+        for i, (h0, s0) in enumerate(seqs):
+            if i in dups:
+                if args.dup is not None:
+                    print(">{}\n{}".format(h0, s0), file=args.dup)
+            else:
+                print(">{}\n{}".format(h0, s0), file=args.out)
+
 
     return ''
 
