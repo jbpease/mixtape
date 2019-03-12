@@ -3,7 +3,7 @@
 # vim:fileencoding=utf-8
 
 """
-TRANSLATE FASTA
+Template Script
 James B. Pease
 """
 
@@ -40,10 +40,10 @@ def generate_argparser():
         epilog=_LICENSE)
     parser.add_argument('fasta', type=os.path.abspath,
                         help="input fasta file")
+    parser.add_argument('--col', type=int,
+                        default=0, help="output file")
     parser.add_argument('--out', type=os.path.abspath,
-                        default=sys.stdout, help="output fasta file")
-    parser.add_argument('--fixed', type=int,
-                        help="set to fixed length")
+                        default=sys.stdout, help="output file")
     return parser
 
 
@@ -51,17 +51,11 @@ def main(arguments=None):
     arguments = arguments if arguments is not None else sys.argv[1:]
     parser = generate_argparser()
     args = parser.parse_args(args=arguments)
-    maxlen = 0
-    for _, seq in fasta_iter(args.fasta):
-        maxlen = max(len(seq), maxlen)
+    seqs = []
     for hdr, seq in fasta_iter(args.fasta):
-        seq = seq + "-" * (maxlen - len(seq))
-        if args.fixed is not None:
-            if len(seq) < args.fixed:
-                seq = seq[:args.fixed]
-            else:
-                seq = seq + "-" * (args.fixed - len(seq))
-        print(">{}\n{}".format(hdr, seq))
+        seqs.append((len(seq.replace("N","").replace("-","")), hdr, seq))
+    for _, hdr, seq in sorted(seqs):
+        print(">{}\n{}".format(hdr, seq), file=args.out)
     return ''
 
 
