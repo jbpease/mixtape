@@ -115,7 +115,7 @@ def main(arguments=None):
             arr[i][j] = float(entry[2])
             arr[j][i] = float(entry[2])
     mds = MDS(n_components=2, dissimilarity='precomputed', 
-              max_iter=100)
+              max_iter=100000)
     #arr = np.exp(arr)
     print(arr)
     results = mds.fit(arr)
