@@ -1,0 +1,5 @@
+#!/bin/bash
+while read line; do
+	grep -Pzo ">"$line"[^>]*?>" $2 | head -n-1 
+	grep -Pzo ">"$line"[^>,\Z]*?\Z" $2 | sed -e '$a\'
+done < $1
