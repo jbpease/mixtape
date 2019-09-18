@@ -6,9 +6,9 @@ http://www.github.com/jbpease/mixtape
 
 James B. Pease
 
-Email: jbpease@umich.edu
+Email: peasejb@wfu.edu
 
-Web: http://jbpease.github.io
+Web: http://www.peaselab.org
 
 GScholar: https://scholar.google.com/citations?user=VzP548QAAAAJ&hl=en
 
@@ -17,7 +17,7 @@ Development of these tools is ongoing and there may be daily builds of some tool
 
 ### Requirements ###
 
-* Python 2.6+ or 3.x
+* Python 3.6+
 
 NOTE: Scipy and Numpy will be required for tools in the near future.
 
