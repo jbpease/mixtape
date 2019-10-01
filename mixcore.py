@@ -53,7 +53,7 @@ def complement(seq):
             'c', 'G').replace('g', 'C')
 
 
-def translate(seq):
+def translate(seq, mask_stop=False, remove_stop=False):
     """Returns translated amino acids from nucleotides"""
     aa_seq = []
     for i in range(int(len(seq) / 3.0) + 1):
@@ -66,7 +66,12 @@ def translate(seq):
             aa_seq.append('X')
         else:
             aa_seq.append(STANDARD_CODON_TABLE[codon])
-    return ''.join(aa_seq)
+    aa_seq = ''.join(aa_seq)
+    if mask_stop is True:
+        aa_seq = aa_seq.replace("*", "X")
+    if remove_stop is True:
+        aa_seq = aa_seq.replace("*", "")
+    return aa_seq
 
 
 def untranslate(amino_acids, nucleotides, firststop=False):

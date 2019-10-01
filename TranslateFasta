@@ -58,7 +58,8 @@ def main(arguments=None):
     for hdr, seq in fasta_iter(args.fasta):
         if args.dealign:
             seq = seq.replace("-", "")
-        print(">{}\n{}".format(hdr, translate(seq)))
+        print(">{}\n{}".format(hdr, translate(seq, remove_stop=args.remove_stop, 
+                                              mask_stop=args.mask_stop)))
     return ''
 
 
