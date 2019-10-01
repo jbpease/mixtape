@@ -44,6 +44,10 @@ def generate_argparser():
                         default=sys.stdout, help="output fasta file")
     parser.add_argument("--dealign", action="store_true",
                         help="remove gaps prior to translation")
+    parser.add_argument("--mask-stop", action="store_true",
+                        help="mask-stop codon with an X")
+    parser.add_argument("--remove-stop", action="store_true",
+                        help="truncate stop codons")
     return parser
 
 
